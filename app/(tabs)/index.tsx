@@ -1,98 +1,181 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Ionicons } from "@expo/vector-icons";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function InicioScreen() {
+  const habits = [
+    { id: 1, text: "Interrumpe tu exposición a las..." },
+    // si está vacío, el espacio quedará libre
+  ];
 
-export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ThemedView style={styles.container}>
+      {/* Header con fecha */}
+      <View style={styles.header}>
+        <ThemedText type="title" style={styles.headerTitle}>HOY</ThemedText>
+        <ThemedText type="default" style={styles.headerSubtitle}>22 sept</ThemedText>
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Calendario compacto */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.calendar}
+      >
+        {["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"].map((day, i) => (
+          <TouchableOpacity
+            key={i}
+            style={[styles.day, i === 1 && styles.activeDay]}
+          >
+            <ThemedText style={i === 1 ? styles.activeDayText : styles.dayText}>
+              {day}
+            </ThemedText>
+            <ThemedText style={i === 1 ? styles.activeDayText : styles.dayText}>
+              {21 + i}
+            </ThemedText>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Filtros */}
+      <View style={styles.filters}>
+        <TouchableOpacity style={styles.filterButton}>
+          <ThemedText style={styles.filterText}>TODOS</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.filterButton, styles.activeFilter]}>
+          <Ionicons name="sunny-outline" size={16} color="white" />
+          <ThemedText style={styles.activeFilterText}> MAÑANA</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.filterButton}>
+          <ThemedText style={styles.filterText}>TARDE</ThemedText>
+        </TouchableOpacity>
+      </View>
+
+      {/* Lista de hábitos del día */}
+      <ScrollView style={styles.habitsContainer}>
+        {habits.length > 0 ? (
+          habits.map((habit) => (
+            <View key={habit.id} style={styles.habitCard}>
+              <Ionicons name="phone-portrait-outline" size={20} color="white" />
+              <ThemedText style={styles.habitText}>{habit.text}</ThemedText>
+              <Ionicons name="ellipsis-horizontal" size={20} color="white" />
+            </View>
+          ))
+        ) : (
+          <View style={styles.noHabitsContainer}>
+            <ThemedText style={styles.noHabitsText}>
+              No tienes hábitos para hoy 🎉
+            </ThemedText>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Botón crear nuevo hábito */}
+      <TouchableOpacity style={styles.addHabitButton}>
+        <ThemedText style={styles.addHabitText}>CREAR UN NUEVO HÁBITO</ThemedText>
+      </TouchableOpacity>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#121212",
+    paddingTop: 40, // margen para que no quede debajo de la hora
+    paddingHorizontal: 16,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  header: {
+    marginBottom: 12,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "white",
+  },
+  headerSubtitle: {
+    color: "#bbb",
+  },
+  calendar: {
+    marginBottom: 12,
+  },
+  day: {
+    alignItems: "center",
+    marginHorizontal: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  activeDay: {
+    backgroundColor: "#2E3A59",
+  },
+  dayText: {
+    color: "#aaa",
+    fontSize: 12,
+  },
+  activeDayText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  filters: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 12,
+  },
+  filterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "#2E2E2E",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  filterText: {
+    color: "#aaa",
+  },
+  activeFilter: {
+    backgroundColor: "#3A6DFF",
+  },
+  activeFilterText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  habitsContainer: {
+    flex: 1,
+    marginBottom: 12,
+  },
+  habitCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#3A6DFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    justifyContent: "space-between",
+  },
+  habitText: {
+    color: "white",
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  noHabitsContainer: {
+    alignItems: "center",
+    marginTop: 40,
+  },
+  noHabitsText: {
+    color: "#aaa",
+    fontStyle: "italic",
+  },
+  addHabitButton: {
+    backgroundColor: "#2E2E2E",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+  },
+  addHabitText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });

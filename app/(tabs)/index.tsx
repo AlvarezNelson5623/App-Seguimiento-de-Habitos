@@ -5,7 +5,7 @@ import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 export default function InicioScreen() {
   const habits = [
-    { id: 1, text: "PONER ALGO ACA..." },
+    { id: 1, text: "un mensaje..." },
     // si está vacío, el espacio quedará libre
   ];
 

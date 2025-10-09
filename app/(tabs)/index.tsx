@@ -3,6 +3,18 @@ import { ThemedView } from "@/components/themed-view";
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
+
+
+import { useEffect } from "react";
+import { auth } from "@/firebase/firebaseConfig";
+
+useEffect(() => {
+  console.log("Firebase conectado:", auth.app.name);
+}, []);
+
+
+
+
 export default function InicioScreen() {
   const habits = [
     { id: 1, text: "un mensaje..." },

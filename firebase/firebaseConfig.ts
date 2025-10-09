@@ -7,12 +7,12 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAY6IsXFTOL0-Za0qjOn7_xn6utWtqWv_o",
-  authDomain: "app-habitos-saludables.firebaseapp.com",
-  projectId: "app-habitos-saludables",
-  storageBucket: "app-habitos-saludables.firebasestorage.app",
-  messagingSenderId: "156282232291",
-  appId: "1:156282232291:web:1ee9289fe3af2be32e14d6"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase

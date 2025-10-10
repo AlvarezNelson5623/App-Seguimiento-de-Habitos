@@ -13,7 +13,6 @@ import {
 } from "react-native";
 import { register, signInWithGoogle } from "../firebase/authService";
 import { addUsernameToFirestore } from "../firebase/userService";
-import { useRouter } from "expo-router";
 import { ThemeContext } from "./_layout";
 import { Feather } from "@expo/vector-icons";
 
@@ -26,12 +25,12 @@ const RegistroScreen = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: "error" | "success" } | null>(null);
+  const [status, setStatus] = useState<"idle" | "checking" | "success">("idle");
 
   const nameInputRef = useRef<TextInput>(null);
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
 
-  const router = useRouter();
   const systemColorScheme = useColorScheme();
   const { isDark } = useContext(ThemeContext);
   const isDarkMode = isDark ?? systemColorScheme === "dark";
@@ -40,31 +39,56 @@ const RegistroScreen = () => {
 
   const handleRegister = async () => {
     setMessage(null);
+    setStatus("checking"); // muestra el chulito mientras procesa
 
     if (!name || !email || !password) {
+      setStatus("idle");
       return setMessage({ text: "❌ Todos los campos son obligatorios", type: "error" });
     }
     if (!isValidEmail(email)) {
+      setStatus("idle");
       return setMessage({ text: "❌ Ingresa un correo válido", type: "error" });
     }
     if (password.length < 6) {
-      return setMessage({ text: "❌ La contraseña debe tener al menos 6 caracteres", type: "error" });
+      setStatus("idle");
+      return setMessage({
+        text: "❌ La contraseña debe tener al menos 6 caracteres",
+        type: "error",
+      });
     }
 
     try {
-      await register(email, password);
-      await addUsernameToFirestore(name, email);
+      const userCredential = await register(email, password);
+      const user = userCredential?.user;
 
-      setMessage({ text: "✅ Registro exitoso. Redirigiendo al login...", type: "success" });
+      if (user) {
+        await addUsernameToFirestore(name, email);
 
-      setTimeout(() => {
-        router.replace("/login");
-      }, 1500);
+        setStatus("success");
+        setMessage({ text: "✅ Registro exitoso", type: "success" });
+
+        // Vaciar los campos después del éxito
+        setName("");
+        setEmail("");
+        setPassword("");
+
+        // Volver a estado normal después de un momento (por estética)
+        setTimeout(() => setStatus("idle"), 1500);
+      } else {
+        throw new Error("No se pudo registrar el usuario.");
+      }
     } catch (e: any) {
+      console.error("Error en registro:", e);
+      setStatus("idle");
+
       if (e.code === "auth/email-already-in-use") {
         setMessage({ text: "❌ Este correo ya está registrado", type: "error" });
+      } else if (e.code === "auth/invalid-email") {
+        setMessage({ text: "❌ Correo no válido", type: "error" });
+      } else if (e.code === "auth/weak-password") {
+        setMessage({ text: "❌ Contraseña demasiado débil", type: "error" });
       } else {
-        setMessage({ text: `❌ ${e.message}`, type: "error" });
+        setMessage({ text: `❌ ${e.message || "Error desconocido"}`, type: "error" });
       }
     }
   };
@@ -72,7 +96,7 @@ const RegistroScreen = () => {
   const handleGoogleSignUp = async () => {
     try {
       await signInWithGoogle();
-      router.replace("/(tabs)");
+      setMessage({ text: "✅ Registro con Google exitoso", type: "success" });
     } catch (e: any) {
       setMessage({ text: `❌ ${e.message}`, type: "error" });
     }
@@ -174,13 +198,19 @@ const RegistroScreen = () => {
         <TouchableOpacity
           style={[styles.registerButton, { backgroundColor: "#6200EE" }]}
           onPress={handleRegister}
+          disabled={status === "checking"}
         >
-          <Text style={styles.registerButtonText}>Registrarse</Text>
+          {status === "checking" ? (
+            <Feather name="check" size={24} color="#fff" />
+          ) : (
+            <Text style={styles.registerButtonText}>Registrarse</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.googleButton, { borderColor: "#6200EE" }]}
           onPress={handleGoogleSignUp}
+          disabled={status === "checking"}
         >
           <Text
             style={[styles.googleButtonText, { color: isDarkMode ? "#fff" : "#6200EE" }]}

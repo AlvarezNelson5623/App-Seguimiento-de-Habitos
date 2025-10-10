@@ -7,14 +7,19 @@ import {
   StyleSheet,
   useColorScheme,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { login } from "../firebase/authService";
 import { useRouter } from "expo-router";
 import { ThemeContext } from "./_layout";
-import { Feather } from "@expo/vector-icons"; 
+import { Feather } from "@expo/vector-icons";
 
-import logoLight from "./assets/logo.png";   // Logo para modo claro
-import logoDark from "./assets/logo2.png";   // Logo para modo oscuro
+import logoLight from "./assets/logo.png";
+import logoDark from "./assets/logo2.png";
 
 const LoginScreen = () => {
   const [userIdentifier, setUserIdentifier] = useState("");
@@ -36,109 +41,121 @@ const LoginScreen = () => {
     try {
       await login(userIdentifier, password);
       setError(null);
-      router.replace("(tabs)");
+      router.replace("/(tabs)");
     } catch (e: any) {
       setError(e.message);
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: isDarkMode ? "#121212" : "#f5f5f5" }]}>
-      {/* Botón de modo oscuro/claro */}
-      <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
-        <Feather
-          name={isDarkMode ? "sun" : "moon"}
-          size={28}
-          color={isDarkMode ? "#FFA500" : "#4b4b4b"}
-        />
-      </TouchableOpacity>
-
-      {/* Logo según el tema */}
-      <View style={{ alignItems: "center", marginBottom: 24 }}>
-        <Image 
-          source={isDarkMode ? logoDark : logoLight} 
-          style={{ width: 120, height: 120, resizeMode: "contain" }} 
-        />
-      </View>
-
-      {/* Título */}
-      <Text style={[styles.title, { color: isDarkMode ? "#fff" : "#333" }]}>Iniciar Sesión</Text>
-
-      {/* Correo */}
-      <TextInput
-        placeholder="Correo"
-        value={userIdentifier}
-        onChangeText={setUserIdentifier}
-        style={[
-          styles.input,
-          {
-            backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
-            color: isDarkMode ? "#fff" : "#000",
-            borderColor: isDarkMode ? "#555" : "#ccc",
-          },
-        ]}
-        autoCapitalize="none"
-        placeholderTextColor={isDarkMode ? "#aaa" : "#888"}
-      />
-
-      {/* Contraseña */}
-      <View style={{ position: "relative", marginBottom: 20 }}>
-        <TextInput
-          placeholder="Contraseña"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          style={[
-            styles.input,
-            {
-              backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
-              color: isDarkMode ? "#fff" : "#000",
-              borderColor: isDarkMode ? "#555" : "#ccc",
-            },
-          ]}
-          placeholderTextColor={isDarkMode ? "#aaa" : "#888"}
-        />
-
-        {/* Botón ojo */}
-        <TouchableOpacity
-          style={styles.showButton}
-          onPress={() => setShowPassword(!showPassword)}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: "center",
+            padding: 24,
+          }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Feather
-            name={showPassword ? "eye" : "eye-off"}
-            size={24}
-            color={isDarkMode ? "#fff" : "#000"}
+          <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
+            <Feather
+              name={isDarkMode ? "sun" : "moon"}
+              size={28}
+              color={isDarkMode ? "#FFA500" : "#4b4b4b"}
+            />
+          </TouchableOpacity>
+
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
+            <Image
+              source={isDarkMode ? logoDark : logoLight}
+              style={{ width: 120, height: 120, resizeMode: "contain" }}
+            />
+          </View>
+
+          <Text style={[styles.title, { color: isDarkMode ? "#fff" : "#333" }]}>
+            Iniciar Sesión
+          </Text>
+
+          {/* Correo */}
+          <TextInput
+            placeholder="Correo"
+            value={userIdentifier}
+            onChangeText={setUserIdentifier}
+            style={[
+              styles.input,
+              {
+                backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
+                color: isDarkMode ? "#fff" : "#000",
+                borderColor: isDarkMode ? "#555" : "#ccc",
+              },
+            ]}
+            autoCapitalize="none"
+            placeholderTextColor={isDarkMode ? "#aaa" : "#888"}
           />
-        </TouchableOpacity>
-      </View>
 
-      {/* Botón Iniciar Sesión */}
-      <TouchableOpacity
-        style={[styles.loginButton, { backgroundColor: "#6200EE" }]}
-        onPress={handleLogin}
-      >
-        <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
-      </TouchableOpacity>
+          {/* Contraseña */}
+          <View style={{ position: "relative", marginBottom: 20 }}>
+            <TextInput
+              placeholder="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: isDarkMode ? "#1e1e1e" : "#fff",
+                  color: isDarkMode ? "#fff" : "#000",
+                  borderColor: isDarkMode ? "#555" : "#ccc",
+                },
+              ]}
+              placeholderTextColor={isDarkMode ? "#aaa" : "#888"}
+            />
+            <TouchableOpacity
+              style={styles.showButton}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Feather
+                name={showPassword ? "eye" : "eye-off"}
+                size={24}
+                color={isDarkMode ? "#fff" : "#000"}
+              />
+            </TouchableOpacity>
+          </View>
 
-      {/* Botón Registrarse */}
-      <TouchableOpacity style={{ marginTop: 16 }} onPress={() => router.push("/registro")}>
-        <Text style={{ color: isDarkMode ? "#fff" : "#6200EE", textAlign: "center", fontSize: 16 }}>
-          Registrarse
-        </Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.loginButton, { backgroundColor: "#6200EE" }]}
+            onPress={handleLogin}
+          >
+            <Text style={styles.loginButtonText}>Iniciar Sesión</Text>
+          </TouchableOpacity>
 
-      {/* Error */}
-      {error && <Text style={[styles.error, { color: "#cf6679" }]}>{error}</Text>}
-    </View>
+          <TouchableOpacity
+            style={{ marginTop: 16 }}
+            onPress={() => router.push("/registro")}
+          >
+            <Text
+              style={{
+                color: isDarkMode ? "#fff" : "#6200EE",
+                textAlign: "center",
+                fontSize: 16,
+              }}
+            >
+              Registrarse
+            </Text>
+          </TouchableOpacity>
+
+          {error && <Text style={[styles.error, { color: "#cf6679" }]}>{error}</Text>}
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
   themeButton: {
     position: "absolute",
     top: 40,

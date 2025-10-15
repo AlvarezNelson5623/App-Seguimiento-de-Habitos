@@ -3,7 +3,7 @@
 # dependencies
 node_modules/
 
-api.ts
+config/api.ts
 
 # Expo
 .expo/

@@ -62,7 +62,7 @@ export default function LoginScreen() {
       // await AsyncStorage.setItem("token", response.token);
 
       setTimeout(() => {
-        router.replace("/(tabs)");
+        router.replace("/(tabs)/home");
       }, 1500);
     } catch (error: any) {
       setStatus("idle");

@@ -53,17 +53,25 @@ export default function RootLayout() {
   return (
     <ThemeContext.Provider value={{ toggleTheme, isDark }}>
       <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-        <Stack>
-          {!user ? (
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-          ) : (
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          )}
-          <Stack.Screen
-            name="modal"
-            options={{ presentation: "modal", title: "Modal" }}
-          />
-        </Stack>
+        <Stack screenOptions={{ headerShown: false }}>
+            {!user ? (
+              <Stack.Screen name="login" />
+            ) : (
+              <Stack.Screen
+                name="(tabs)"
+                options={{
+                  headerShown: false,
+                }}
+              />
+            )}
+            <Stack.Screen
+              name="modal"
+              options={{
+                presentation: "modal",
+                headerShown: false,
+              }}
+            />
+          </Stack>
         <StatusBar style={isDark ? "light" : "dark"} />
       </ThemeProvider>
     </ThemeContext.Provider>

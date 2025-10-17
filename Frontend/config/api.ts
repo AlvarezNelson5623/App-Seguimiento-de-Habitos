@@ -1,4 +1,4 @@
 
 // Exportamos directamente la constante API_URL
-export const API_URL = "http://10.14.56.76:3000/api"
+export const API_URL = "http://192.168.1.99:3000/api"
 

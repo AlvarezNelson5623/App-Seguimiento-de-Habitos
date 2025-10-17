@@ -18,17 +18,13 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ThemeContext } from "./_layout";
-import { login } from "../services/authService";
+import { login } from "../services/authService"; // ✅ Usa tu servicio existente
 
 // 🖼️ Imágenes de tema claro/oscuro
 import logoLight from "./assets/logo.png";
 import logoDark from "./assets/logo2.png";
 import backgroundImageDark from "./assets/imageBackground.png";
 import backgroundImageLight from "./assets/imageBackground2.png";
-
-
-
-
 
 export default function LoginScreen() {
   const router = useRouter();

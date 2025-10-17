@@ -2,24 +2,32 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { useLayoutEffect, useState, useEffect } from "react";
+import { useLayoutEffect, useState, useEffect, useContext } from "react";
 import { useNavigation } from "expo-router";
+import { ThemeContext } from "../_layout"; // 👈 importamos el contexto
 
 export default function InicioScreen() {
   const navigation = useNavigation();
+  const { isDark } = useContext(ThemeContext); // 👈 usamos el tema global
 
-  // 🔹 Ocultar encabezado automático
+  const colors = {
+    background: isDark ? "#121212" : "#F7F9FC",
+    text: isDark ? "#FFFFFF" : "#000000",
+    subtext: isDark ? "#BBBBBB" : "#555555",
+    card: isDark ? "#3A6DFF" : "#007AFF",
+    surface: isDark ? "#2E2E2E" : "#E3E3E3",
+    accent: isDark ? "#3A6DFF" : "#007AFF",
+  };
+
   useLayoutEffect(() => {
     navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  // 🔹 Estado de la fecha actual, seleccionada y de inicio de semana
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekStart, setWeekStart] = useState(getStartOfWeek(new Date()));
-
-  // 🔹 Generar los días de la semana
   const [weekDays, setWeekDays] = useState<{ day: string; date: Date }[]>([]);
+
   useEffect(() => {
     const days = [];
     const dayNames = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
@@ -31,7 +39,6 @@ export default function InicioScreen() {
     setWeekDays(days);
   }, [weekStart]);
 
-  // 🔹 Función auxiliar: obtener inicio de semana
   function getStartOfWeek(date: Date) {
     const d = new Date(date);
     const day = d.getDay();
@@ -39,63 +46,60 @@ export default function InicioScreen() {
     return new Date(d.setDate(diff));
   }
 
-  // 🔹 Cambiar semana (anterior o siguiente)
   const changeWeek = (direction: "prev" | "next") => {
     const newStart = new Date(weekStart);
     newStart.setDate(weekStart.getDate() + (direction === "next" ? 7 : -7));
     setWeekStart(newStart);
   };
 
-  // 🔹 Calcular cómo mostrar la fecha seleccionada
   const formattedDateInfo = getDateInfo(selectedDate, currentDate);
-
   const habits = [{ id: 1, text: "un mensaje..." }];
 
   return (
-    <ThemedView style={styles.container}>
-      {/* Header con fecha dinámica */}
+    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Header */}
       <View style={styles.header}>
-        <ThemedText type="title" style={styles.headerTitle}>
+        <ThemedText type="title" style={[styles.headerTitle, { color: colors.text }]}>
           {formattedDateInfo.label}
         </ThemedText>
-        <ThemedText type="default" style={styles.headerSubtitle}>
+        <ThemedText type="default" style={[styles.headerSubtitle, { color: colors.subtext }]}>
           {formattedDateInfo.subLabel}
         </ThemedText>
       </View>
 
-      {/* Calendario compacto con controles de semana */}
+      {/* Calendario */}
       <View style={styles.calendarRow}>
         <TouchableOpacity onPress={() => changeWeek("prev")}>
-          <Ionicons name="chevron-back" size={22} color="white" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.calendarScroll}
-        >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarScroll}>
           {weekDays.map((item, i) => {
-            const isToday =
-              item.date.toDateString() === currentDate.toDateString();
-            const isSelected =
-              item.date.toDateString() === selectedDate.toDateString();
+            const isToday = item.date.toDateString() === currentDate.toDateString();
+            const isSelected = item.date.toDateString() === selectedDate.toDateString();
 
             return (
               <TouchableOpacity
                 key={i}
                 style={[
                   styles.day,
-                  (isToday || isSelected) && styles.activeDay,
+                  (isToday || isSelected) && { backgroundColor: colors.accent },
                 ]}
                 onPress={() => setSelectedDate(item.date)}
               >
                 <ThemedText
-                  style={isSelected ? styles.activeDayText : styles.dayText}
+                  style={[
+                    styles.dayText,
+                    { color: isSelected ? "#fff" : colors.subtext },
+                  ]}
                 >
                   {item.day}
                 </ThemedText>
                 <ThemedText
-                  style={isSelected ? styles.activeDayText : styles.dayText}
+                  style={[
+                    styles.dayText,
+                    { color: isSelected ? "#fff" : colors.subtext },
+                  ]}
                 >
                   {item.date.getDate()}
                 </ThemedText>
@@ -105,21 +109,21 @@ export default function InicioScreen() {
         </ScrollView>
 
         <TouchableOpacity onPress={() => changeWeek("next")}>
-          <Ionicons name="chevron-forward" size={22} color="white" />
+          <Ionicons name="chevron-forward" size={22} color={colors.text} />
         </TouchableOpacity>
       </View>
 
       {/* Filtros */}
       <View style={styles.filters}>
-        <TouchableOpacity style={styles.filterButton}>
-          <ThemedText style={styles.filterText}>TODOS</ThemedText>
+        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.surface }]}>
+          <ThemedText style={{ color: colors.subtext }}>TODOS</ThemedText>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterButton, styles.activeFilter]}>
+        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.accent, flexDirection: "row" }]}>
           <Ionicons name="sunny-outline" size={16} color="white" />
-          <ThemedText style={styles.activeFilterText}> MAÑANA</ThemedText>
+          <ThemedText style={{ color: "#fff", fontWeight: "bold" }}> MAÑANA</ThemedText>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton}>
-          <ThemedText style={styles.filterText}>TARDE</ThemedText>
+        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.surface }]}>
+          <ThemedText style={{ color: colors.subtext }}>TARDE</ThemedText>
         </TouchableOpacity>
       </View>
 
@@ -127,24 +131,24 @@ export default function InicioScreen() {
       <ScrollView style={styles.habitsContainer}>
         {habits.length > 0 ? (
           habits.map((habit) => (
-            <View key={habit.id} style={styles.habitCard}>
-              <Ionicons name="phone-portrait-outline" size={20} color="white" />
-              <ThemedText style={styles.habitText}>{habit.text}</ThemedText>
-              <Ionicons name="ellipsis-horizontal" size={20} color="white" />
+            <View key={habit.id} style={[styles.habitCard, { backgroundColor: colors.accent }]}>
+              <Ionicons name="phone-portrait-outline" size={20} color="#fff" />
+              <ThemedText style={[styles.habitText, { color: "#fff" }]}>{habit.text}</ThemedText>
+              <Ionicons name="ellipsis-horizontal" size={20} color="#fff" />
             </View>
           ))
         ) : (
           <View style={styles.noHabitsContainer}>
-            <ThemedText style={styles.noHabitsText}>
+            <ThemedText style={[styles.noHabitsText, { color: colors.subtext }]}>
               No tienes hábitos para hoy 🎉
             </ThemedText>
           </View>
         )}
       </ScrollView>
 
-      {/* Botón crear nuevo hábito */}
-      <TouchableOpacity style={styles.addHabitButton}>
-        <ThemedText style={styles.addHabitText}>
+      {/* Botón crear hábito */}
+      <TouchableOpacity style={[styles.addHabitButton, { backgroundColor: colors.surface }]}>
+        <ThemedText style={[styles.addHabitText, { color: colors.text }]}>
           CREAR UN NUEVO HÁBITO
         </ThemedText>
       </TouchableOpacity>
@@ -152,7 +156,7 @@ export default function InicioScreen() {
   );
 }
 
-// 🔹 Función auxiliar para determinar cómo mostrar la fecha seleccionada
+// Función auxiliar
 function getDateInfo(selected: Date, current: Date) {
   const diffDays = Math.floor(
     (selected.setHours(0, 0, 0, 0) - current.setHours(0, 0, 0, 0)) /
@@ -160,27 +164,10 @@ function getDateInfo(selected: Date, current: Date) {
   );
 
   const dayNames = [
-    "domingo",
-    "lunes",
-    "martes",
-    "miércoles",
-    "jueves",
-    "viernes",
-    "sábado",
+    "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado",
   ];
   const monthNames = [
-    "ene",
-    "feb",
-    "mar",
-    "abr",
-    "may",
-    "jun",
-    "jul",
-    "ago",
-    "sept",
-    "oct",
-    "nov",
-    "dic",
+    "ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic",
   ];
 
   if (diffDays === 0) return { label: "HOY", subLabel: "" };
@@ -194,110 +181,29 @@ function getDateInfo(selected: Date, current: Date) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#121212",
-    paddingTop: 40,
-    paddingHorizontal: 16,
-  },
-  header: {
-    marginBottom: 10,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "white",
-  },
-  headerSubtitle: {
-    color: "#bbb",
-    textTransform: "capitalize",
-  },
+  container: { flex: 1, paddingTop: 40, paddingHorizontal: 16 },
+  header: { marginBottom: 10 },
+  headerTitle: { fontSize: 28, fontWeight: "bold" },
+  headerSubtitle: { textTransform: "capitalize" },
   calendarRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 12,
   },
-  calendarScroll: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  day: {
-    alignItems: "center",
-    marginHorizontal: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-  },
-  activeDay: {
-    backgroundColor: "#3A6DFF",
-  },
-  dayText: {
-    color: "#aaa",
-    fontSize: 12,
-  },
-  activeDayText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
-  filters: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 12,
-  },
-  filterButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: "#2E2E2E",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  filterText: {
-    color: "#aaa",
-  },
-  activeFilter: {
-    backgroundColor: "#3A6DFF",
-  },
-  activeFilterText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  habitsContainer: {
-    flex: 1,
-    marginBottom: 12,
-  },
+  calendarScroll: { flexDirection: "row", alignItems: "center" },
+  day: { alignItems: "center", marginHorizontal: 2, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 10 },
+  dayText: { fontSize: 12 },
+  filters: { flexDirection: "row", justifyContent: "space-around", marginBottom: 12 },
+  filterButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, alignItems: "center" },
+  habitsContainer: { flex: 1, marginBottom: 12 },
   habitCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#3A6DFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    justifyContent: "space-between",
+    flexDirection: "row", alignItems: "center", borderRadius: 16,
+    padding: 16, marginBottom: 12, justifyContent: "space-between",
   },
-  habitText: {
-    color: "white",
-    flex: 1,
-    marginHorizontal: 8,
-  },
-  noHabitsContainer: {
-    alignItems: "center",
-    marginTop: 40,
-  },
-  noHabitsText: {
-    color: "#aaa",
-    fontStyle: "italic",
-  },
-  addHabitButton: {
-    backgroundColor: "#2E2E2E",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-  },
-  addHabitText: {
-    color: "white",
-    fontWeight: "bold",
-  },
+  habitText: { flex: 1, marginHorizontal: 8 },
+  noHabitsContainer: { alignItems: "center", marginTop: 40 },
+  noHabitsText: { fontStyle: "italic" },
+  addHabitButton: { borderRadius: 16, padding: 16, alignItems: "center" },
+  addHabitText: { fontWeight: "bold" },
 });

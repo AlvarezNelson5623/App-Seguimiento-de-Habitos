@@ -55,7 +55,7 @@ export default function InicioScreen() {
   const formattedDateInfo = getDateInfo(selectedDate, currentDate);
   const habits = [{ id: 1, text: "un mensaje..." }];
 
-  return (
+  return ( 
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>

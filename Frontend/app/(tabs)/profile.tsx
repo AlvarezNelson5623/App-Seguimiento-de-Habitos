@@ -8,10 +8,12 @@ import {
   Modal,
   FlatList,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import { Colors } from "@/constants/theme";
 import { ThemeContext } from "../_layout";
 import { Ionicons } from "@expo/vector-icons";
+import {login} from "../../services/authService";
+
+
 
 export default function ProfileScreen() {
   const { toggleTheme, isDark } = useContext(ThemeContext);
@@ -49,27 +51,6 @@ export default function ProfileScreen() {
     alert("Sesión cerrada ✅");
   };
 
-  const pickImageFromDevice = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      alert("Se necesita permiso para acceder a tus fotos 📸");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setAvatar({ uri: result.assets[0].uri });
-      setModalVisible(false);
-    }
-  };
-
-  // 👉 Usa el tema actual del contexto, no el del sistema
   const themeColors = Colors[isDark ? "dark" : "light"];
 
   return (
@@ -113,21 +94,13 @@ export default function ProfileScreen() {
             <Text style={styles.modalTitle}>Selecciona tu avatar</Text>
 
             <FlatList
-              data={[...avatars, "addButton"]}
+              data={avatars}
               numColumns={3}
-              renderItem={({ item }) =>
-                item === "addButton" ? (
-                  <TouchableOpacity onPress={pickImageFromDevice}>
-                    <View style={styles.addButton}>
-                      <Ionicons name="add" size={40} color="white" />
-                    </View>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity onPress={() => handleAvatarSelect(item)}>
-                    <Image source={item} style={styles.modalAvatarGrid} />
-                  </TouchableOpacity>
-                )
-              }
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => handleAvatarSelect(item)}>
+                  <Image source={item} style={styles.modalAvatarGrid} />
+                </TouchableOpacity>
+              )}
               keyExtractor={(_, i) => i.toString()}
               contentContainerStyle={styles.avatarGridContainer}
             />
@@ -213,15 +186,6 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     margin: 10,
-  },
-  addButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    margin: 10,
-    backgroundColor: "#3A6DFF",
-    justifyContent: "center",
-    alignItems: "center",
   },
   closeModal: {
     backgroundColor: "#3A6DFF",

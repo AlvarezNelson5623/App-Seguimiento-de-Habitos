@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from "react";
+import React, { useState, useContext, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,13 +11,17 @@ import {
   ScrollView,
   Image,
 } from "react-native";
-import { register } from "../services/authService"; // 🔥 tu backend con SQL
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import { register } from "../services/authService"; // tu función para crear usuario en el backend
 import { ThemeContext } from "./_layout";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
 import logoLight from "./assets/logo.png";
 import logoDark from "./assets/logo2.png";
+
+WebBrowser.maybeCompleteAuthSession();
 
 const RegistroScreen = () => {
   const [name, setName] = useState("");
@@ -36,8 +40,44 @@ const RegistroScreen = () => {
   const { isDark } = useContext(ThemeContext);
   const isDarkMode = isDark ?? systemColorScheme === "dark";
 
+  // ✅ Configurar Google Auth
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: "156282232291-ap4t4ds1v4rgd380mmpmumnepnfcruva.apps.googleusercontent.com", 
+    redirectUri: "https://auth.expo.io/@nelsonalvarez5623/App-Seguimiento-de-Habitos",
+  });
+
+  // ✅ Manejo del resultado del inicio de sesión con Google
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { authentication } = response;
+      console.log("✅ Token de Google:", authentication?.accessToken);
+
+      // Aquí podrías obtener los datos del usuario con Google API
+      fetch("https://www.googleapis.com/userinfo/v2/me", {
+        headers: { Authorization: `Bearer ${authentication?.accessToken}` },
+      })
+        .then((res) => res.json())
+        .then(async (userInfo) => {
+          console.log("👤 Datos del usuario Google:", userInfo);
+          setMessage({ text: `Bienvenido, ${userInfo.name}!`, type: "success" });
+
+          // 🔥 O registrarlo automáticamente en tu backend
+          try {
+            await register(userInfo.name, userInfo.email, "google_oauth");
+            setTimeout(() => router.replace("/login"), 2000);
+          } catch (err) {
+            console.error("Error al registrar con Google:", err);
+            setMessage({ text: "❌ Error al registrar con Google", type: "error" });
+          }
+        })
+        .catch((error) => console.error("Error al obtener info de Google:", error));
+    }
+  }, [response]);
+
+  // Validar correo
   const isValidEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
 
+  // Registro normal
   const handleRegister = async () => {
     setMessage(null);
     setStatus("checking");
@@ -104,6 +144,7 @@ const RegistroScreen = () => {
           ¡Vamos a ello!
         </Text>
 
+        {/* Inputs normales */}
         <TextInput
           ref={nameInputRef}
           placeholder="Nombre completo"
@@ -172,6 +213,7 @@ const RegistroScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Botón de registro normal */}
         <TouchableOpacity
           style={[styles.registerButton, { backgroundColor: "#6200EE" }]}
           onPress={handleRegister}
@@ -182,6 +224,21 @@ const RegistroScreen = () => {
           ) : (
             <Text style={styles.registerButtonText}>Registrarse</Text>
           )}
+        </TouchableOpacity>
+
+        {/* 🚀 Botón Google */}
+        <TouchableOpacity
+          style={[styles.googleButton, { backgroundColor: "#fff", borderColor: "#ccc" }]}
+          onPress={() => promptAsync()}
+          disabled={!request}
+        >
+          <Image
+            source={{
+              uri: "https://upload.wikimedia.org/wikipedia/commons/4/4e/Google_%22G%22_Logo.svg",
+            }}
+            style={{ width: 24, height: 24, marginRight: 10 }}
+          />
+          <Text style={{ color: "#333", fontWeight: "bold" }}>Registrarse con Google</Text>
         </TouchableOpacity>
 
         {message && (
@@ -250,6 +307,15 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 18,
+  },
+  googleButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 10,
   },
 });
 

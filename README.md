@@ -29,6 +29,7 @@ CREATE TABLE `usuarios` (
   `email` VARCHAR(100) NOT NULL,
   `password` VARCHAR(255) NOT NULL,
   `fecha_registro` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `foto_perfil` VARCHAR(255) NOT NULL DEFAULT 'pacific2.jpg',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB 

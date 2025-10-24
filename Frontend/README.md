@@ -9,6 +9,7 @@
    npm install axios
    npm install --save-dev @types/axios
    npx expo install expo-image-picker
+   npx expo install expo-auth-session expo-web-browser
    ```
 
 2. Start the app

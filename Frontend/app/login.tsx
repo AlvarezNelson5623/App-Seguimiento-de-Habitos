@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   View,
   Text,
@@ -18,13 +18,19 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ThemeContext } from "./_layout";
-import { login } from "../services/authService"; // ✅ Usa tu servicio existente
+import { login } from "../services/authService";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri, ResponseType } from "expo-auth-session";
 
-// 🖼️ Imágenes de tema claro/oscuro
+// 🖼️ Imágenes
 import logoLight from "./assets/logo.png";
 import logoDark from "./assets/logo2.png";
 import backgroundImageDark from "./assets/imageBackground.png";
 import backgroundImageLight from "./assets/imageBackground2.png";
+
+// Necesario para manejar el flujo OAuth en Expo
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -38,6 +44,37 @@ export default function LoginScreen() {
   const [status, setStatus] = useState<"idle" | "checking" | "success">("idle");
   const [message, setMessage] = useState<{ text: string; type: "error" | "success" } | null>(null);
 
+  // 🚀 Configuración de Google
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    responseType: ResponseType.Token,
+    clientId: "156282232291-ap4t4ds1v4rgd380mmpmumnepnfcruva.apps.googleusercontent.com",
+    redirectUri: "https://auth.expo.io/@nelsonalvarez5623/App-Seguimiento-de-Habitos",
+    scopes: ["openid", "email"],
+  });
+  console.log("🔗 Redirect URI:", request?.redirectUri);
+
+  useEffect(() => {
+    const getUserInfo = async () => {
+      if (response?.type === "success") {
+        const { access_token } = response.params;
+
+        // Llamada a Google para obtener datos del usuario
+        const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${access_token}` },
+        });
+        const userInfo = await userInfoResponse.json();
+
+        console.log("✅ Usuario:", userInfo);
+        // Ejemplo de lo que recibes:
+        // { sub: "...", name: "Nelson Álvarez", email: "nelson@gmail.com" }
+      }else {
+        console.log("❌ Error en el inicio de sesión con Google");
+      }
+    };
+
+    getUserInfo();
+  }, [response]);
+
   const handleLogin = async () => {
     setMessage(null);
     setStatus("checking");
@@ -49,13 +86,8 @@ export default function LoginScreen() {
 
     try {
       const response = await login(email, password);
-      console.log("Respuesta del backend:", response);
-
       setStatus("success");
       setMessage({ text: "✅ Inicio de sesión exitoso", type: "success" });
-
-      // Aquí podrías guardar el token si tu backend lo devuelve:
-      // await AsyncStorage.setItem("token", response.token);
 
       setTimeout(() => {
         router.replace("/(tabs)/home");
@@ -155,7 +187,7 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Botón login */}
+              {/* Botón login normal */}
               <TouchableOpacity
                 onPress={handleLogin}
                 disabled={status === "checking"}
@@ -169,6 +201,15 @@ export default function LoginScreen() {
                 ) : (
                   <Text style={styles.loginButtonText}>Entrar</Text>
                 )}
+              </TouchableOpacity>
+
+              {/* 🔵 Botón de Google */}
+              <TouchableOpacity
+                disabled={!request}
+                onPress={() => promptAsync()} // ✅ Usa proxy también aquí
+                style={[styles.loginButton, { backgroundColor: "#37db7eff", marginTop: 12 }]}
+              >
+                <Text style={styles.loginButtonText}>Iniciar con Google</Text>
               </TouchableOpacity>
 
               {/* Mensaje */}
@@ -207,23 +248,9 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-  },
-  themeButton: {
-    position: "absolute",
-    top: 40,
-    right: 20,
-    zIndex: 10,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 32,
-  },
+  background: { flex: 1, width: "100%", height: "100%" },
+  themeButton: { position: "absolute", top: 40, right: 20, zIndex: 10 },
+  title: { fontSize: 32, fontWeight: "bold", textAlign: "center", marginBottom: 32 },
   input: {
     borderWidth: 1,
     marginBottom: 12,
@@ -237,11 +264,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 1,
   },
-  showButton: {
-    position: "absolute",
-    right: 16,
-    top: 14,
-  },
+  showButton: { position: "absolute", right: 16, top: 14 },
   loginButton: {
     paddingVertical: 16,
     borderRadius: 12,
@@ -253,15 +276,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  loginButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  message: {
-    marginTop: 16,
-    fontWeight: "bold",
-    textAlign: "center",
-    fontSize: 15,
-  },
+  loginButtonText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  message: { marginTop: 16, fontWeight: "bold", textAlign: "center", fontSize: 15 },
 });

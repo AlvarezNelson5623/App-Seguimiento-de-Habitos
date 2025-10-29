@@ -81,3 +81,31 @@ export const getUserById = async (req, res) => {
     res.status(500).json({ message: "Error al obtener usuario" });
   }
 };
+
+
+
+// ✅ Actualizar nombre y foto_perfil
+export const updateUserProfile = async (req, res) => {
+  const { email } = req.params; // buscamos por email
+  const { nombre, foto_perfil } = req.body;
+
+  if (!nombre || !foto_perfil) {
+    return res.status(400).json({ message: "Faltan datos para actualizar" });
+  }
+
+  try {
+    const [result] = await db.execute(
+      "UPDATE usuarios SET nombre = ?, foto_perfil = ? WHERE email = ?",
+      [nombre, foto_perfil, email]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    res.status(200).json({ message: "Perfil actualizado correctamente" });
+  } catch (error) {
+    console.error("❌ Error al actualizar perfil:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};

@@ -22,6 +22,7 @@ import { login } from "../services/authService";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri, ResponseType } from "expo-auth-session";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // 🆕 para guardar token
 
 // 🖼️ Imágenes
 import logoLight from "./assets/logo.png";
@@ -57,17 +58,12 @@ export default function LoginScreen() {
     const getUserInfo = async () => {
       if (response?.type === "success") {
         const { access_token } = response.params;
-
-        // Llamada a Google para obtener datos del usuario
         const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
           headers: { Authorization: `Bearer ${access_token}` },
         });
         const userInfo = await userInfoResponse.json();
-
         console.log("✅ Usuario:", userInfo);
-        // Ejemplo de lo que recibes:
-        // { sub: "...", name: "Nelson Álvarez", email: "nelson@gmail.com" }
-      }else {
+      } else {
         console.log("❌ Error en el inicio de sesión con Google");
       }
     };
@@ -86,6 +82,11 @@ export default function LoginScreen() {
 
     try {
       const response = await login(email, password);
+
+      // 🧠 Guardar token y datos del usuario
+      await AsyncStorage.setItem("userToken", response.token || "");
+      await AsyncStorage.setItem("userData", JSON.stringify(response.user || {}));
+
       setStatus("success");
       setMessage({ text: "✅ Inicio de sesión exitoso", type: "success" });
 
@@ -206,7 +207,7 @@ export default function LoginScreen() {
               {/* 🔵 Botón de Google */}
               <TouchableOpacity
                 disabled={!request}
-                onPress={() => promptAsync()} // ✅ Usa proxy también aquí
+                onPress={() => promptAsync()}
                 style={[styles.loginButton, { backgroundColor: "#37db7eff", marginTop: 12 }]}
               >
                 <Text style={styles.loginButtonText}>Iniciar con Google</Text>

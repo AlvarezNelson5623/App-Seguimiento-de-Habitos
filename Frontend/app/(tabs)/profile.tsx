@@ -1,116 +1,231 @@
-import React, { useState, useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View,
   Text,
+  TouchableOpacity,
   StyleSheet,
   Image,
-  TouchableOpacity,
+  useColorScheme,
+  Alert,
   Modal,
+  TextInput,
   FlatList,
+  LinearGradient,
 } from "react-native";
-import { Colors } from "@/constants/theme";
+import { Feather } from "@expo/vector-icons";
 import { ThemeContext } from "../_layout";
-import { Ionicons } from "@expo/vector-icons";
-import {login} from "../../services/authService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { API_URL } from "../../config/api";
 
-
+const avatarMap: Record<string, any> = {
+  "pacific1.jpg": require("../assets/pacific1.jpg"),
+  "pacific2.jpg": require("../assets/pacific2.jpg"),
+  "pacific3.jpg": require("../assets/pacific3.jpg"),
+  "pacific4.jpg": require("../assets/pacific4.jpg"),
+  "pacific5.jpg": require("../assets/pacific5.jpg"),
+  "pacific6.jpg": require("../assets/pacific6.jpg"),
+  "Tron1.jpg": require("../assets/Tron1.jpg"),
+  "Tron2.jpg": require("../assets/Tron2.jpg"),
+  "Tron3.jpg": require("../assets/Tron3.jpg"),
+  "starwars1.jpg": require("../assets/starwars1.jpg"),
+  "starwars2.jpg": require("../assets/starwars2.jpg"),
+  "starwars3.jpg": require("../assets/starwars3.jpg"),
+  "deadpool.jpg": require("../assets/deadpool.jpg"),
+  "deadpool and wolverine.jpg": require("../assets/deadpool and wolverine.jpg"),
+  "wolverine.jpg": require("../assets/wolverine.jpg"),
+  "Halo1.jpg": require("../assets/Halo1.jpg"),
+  "Halo2.jpg": require("../assets/Halo2.jpg"),
+  "Halo3.jpg": require("../assets/Halo3.jpg"),
+};
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { toggleTheme, isDark } = useContext(ThemeContext);
+  const systemColorScheme = useColorScheme();
+  const isDarkMode = isDark ?? systemColorScheme === "dark";
 
-  const [avatar, setAvatar] = useState(require("../assets/pacific1.jpg"));
+  const [user, setUser] = useState<{ nombre?: string; email?: string; foto_perfil?: string } | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState<string>("");
 
-  const avatars = [
-    require("../assets/pacific1.jpg"),
-    require("../assets/pacific2.jpg"),
-    require("../assets/pacific3.jpg"),
-    require("../assets/pacific4.jpg"),
-    require("../assets/pacific5.jpg"),
-    require("../assets/pacific6.jpg"),
-    require("../assets/Tron1.jpg"),
-    require("../assets/Tron2.jpg"),
-    require("../assets/Tron3.jpg"),
-    require("../assets/starwars1.jpg"),
-    require("../assets/starwars2.jpg"),
-    require("../assets/starwars3.jpg"),
-    require("../assets/deadpool.jpg"),
-    require("../assets/deadpool and wolverine.jpg"),
-    require("../assets/wolverine.jpg"),
-    require("../assets/Halo1.jpg"),
-    require("../assets/Halo2.jpg"),
-    require("../assets/Halo3.jpg"),
-  ];
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const data = await AsyncStorage.getItem("userData");
+        if (data) {
+          const parsed = JSON.parse(data);
+          setUser(parsed);
+          setNewName(parsed.nombre || "");
+          setSelectedAvatar(parsed.foto_perfil || "");
+        }
+      } catch (error) {
+        console.error("❌ Error cargando usuario:", error);
+      }
+    };
+    loadUserData();
+  }, []);
 
-  const handleAvatarSelect = (newAvatar: any) => {
-    setAvatar(newAvatar);
-    setModalVisible(false);
+  const handleLogout = async () => {
+    Alert.alert("Cerrar sesión", "¿Seguro que deseas cerrar sesión?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Sí, salir",
+        style: "destructive",
+        onPress: async () => {
+          await AsyncStorage.removeItem("userToken");
+          await AsyncStorage.removeItem("userData");
+          router.replace("/login");
+        },
+      },
+    ]);
   };
 
-  const handleLogout = () => {
-    alert("Sesión cerrada ✅");
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    const updatedUser = {
+      ...user,
+      nombre: newName || user.nombre,
+      foto_perfil: selectedAvatar || user.foto_perfil,
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/users/update-profile/${user.email}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: updatedUser.nombre,
+          foto_perfil: updatedUser.foto_perfil,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Error al actualizar en el servidor");
+      await AsyncStorage.setItem("userData", JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      setModalVisible(false);
+      Alert.alert("✅ Perfil actualizado", "Los cambios se guardaron correctamente.");
+    } catch (error) {
+      console.error("❌ Error guardando perfil:", error);
+      Alert.alert("Error", "No se pudo actualizar el perfil.");
+    }
   };
 
-  const themeColors = Colors[isDark ? "dark" : "light"];
+  const avatarSource =
+    user?.foto_perfil && avatarMap[user.foto_perfil]
+      ? avatarMap[user.foto_perfil]
+      : require("../assets/pacific1.jpg");
 
   return (
-    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
-      {/* Imagen de perfil */}
-      <TouchableOpacity onPress={() => setModalVisible(true)}>
-        <Image source={avatar} style={styles.avatar} />
+    <View style={[styles.container, { backgroundColor: isDarkMode ? "#0D0D0D" : "#F5F7FB" }]}>
+      {/* 🌗 Botón tema */}
+      <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
+        <Feather
+          name={isDarkMode ? "sun" : "moon"}
+          size={28}
+          color={isDarkMode ? "#FFD369" : "#333"}
+        />
       </TouchableOpacity>
 
-      {/* Nombre y frase */}
-      <Text style={[styles.name, { color: themeColors.text }]}>Usuario</Text>
-      <Text style={[styles.motivational, { color: themeColors.tint }]}>
-        “¡Hoy es un gran día para mejorar tus hábitos!”
+      {/* Avatar con borde brillante */}
+      <View style={styles.avatarWrapper}>
+        <Image source={avatarSource} style={styles.avatar} />
+      </View>
+
+      <Text style={[styles.username, { color: isDarkMode ? "#fff" : "#111" }]}>
+        {user?.nombre || "Usuario"}
       </Text>
 
-      {/* Botón de tema */}
-      <TouchableOpacity style={styles.button} onPress={toggleTheme}>
-        <Ionicons
-          name={isDark ? "sunny-outline" : "moon-outline"}
-          size={22}
-          color="white"
-        />
-        <Text style={styles.buttonText}>
-          {isDark ? "Modo claro" : "Modo oscuro"}
-        </Text>
-      </TouchableOpacity>
+      <Text style={[styles.email, { color: isDarkMode ? "#aaa" : "#555" }]}>
+        {user?.email}
+      </Text>
 
-      {/* Botón de logout */}
-      <TouchableOpacity
-        style={[styles.button, styles.logout]}
-        onPress={handleLogout}
+      {/* Botonera */}
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: isDarkMode ? "#1C1C1E" : "#fff",
+            shadowColor: isDarkMode ? "#000" : "#B0B0B0",
+          },
+        ]}
       >
-        <Ionicons name="log-out-outline" size={22} color="white" />
-        <Text style={styles.buttonText}>Cerrar sesión</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#3A6DFF" }]}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.buttonText}>Editar perfil</Text>
+        </TouchableOpacity>
 
-      {/* Modal de selección de avatar */}
-      <Modal visible={modalVisible} transparent animationType="fade">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Selecciona tu avatar</Text>
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: "#FF4D4D" }]}
+          onPress={handleLogout}
+        >
+          <Text style={styles.buttonText}>Cerrar sesión</Text>
+        </TouchableOpacity>
+      </View>
 
-            <FlatList
-              data={avatars}
-              numColumns={3}
-              renderItem={({ item }) => (
-                <TouchableOpacity onPress={() => handleAvatarSelect(item)}>
-                  <Image source={item} style={styles.modalAvatarGrid} />
-                </TouchableOpacity>
-              )}
-              keyExtractor={(_, i) => i.toString()}
-              contentContainerStyle={styles.avatarGridContainer}
+      {/* 🪟 Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.modalContainer,
+              { backgroundColor: isDarkMode ? "#1C1C1E" : "#fff" },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { color: isDarkMode ? "#fff" : "#111" }]}>
+              Editar perfil
+            </Text>
+
+            <TextInput
+              style={[
+                styles.input,
+                { color: isDarkMode ? "#fff" : "#000", borderColor: "#3A6DFF" },
+              ]}
+              placeholder="Nuevo nombre"
+              placeholderTextColor="#888"
+              value={newName}
+              onChangeText={setNewName}
             />
 
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={styles.closeModal}
-            >
-              <Text style={{ color: "white", fontWeight: "bold" }}>Cerrar</Text>
-            </TouchableOpacity>
+            <Text style={[styles.subTitle, { color: isDarkMode ? "#fff" : "#111" }]}>
+              Selecciona tu avatar:
+            </Text>
+
+            <FlatList
+              data={Object.keys(avatarMap)}
+              keyExtractor={(item) => item}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  onPress={() => setSelectedAvatar(item)}
+                  style={[
+                    styles.avatarOption,
+                    selectedAvatar === item && { borderColor: "#3A6DFF", borderWidth: 3 },
+                  ]}
+                >
+                  <Image source={avatarMap[item]} style={styles.avatarImage} />
+                </TouchableOpacity>
+              )}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: "#3A6DFF", flex: 1 }]}
+                onPress={handleSaveProfile}
+              >
+                <Text style={styles.buttonText}>Guardar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: "#888", flex: 1 }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.buttonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -119,78 +234,85 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    paddingTop: 60,
+  container: { flex: 1, alignItems: "center", justifyContent: "center" },
+  themeButton: { position: "absolute", top: 50, right: 25 },
+  avatarWrapper: {
+    borderWidth: 3,
+    borderColor: "#3A6DFF",
+    borderRadius: 100,
+    padding: 4,
+    marginBottom: 16,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 10,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
   },
-  name: {
-    fontSize: 22,
+  username: {
+    fontSize: 26,
     fontWeight: "bold",
-    marginTop: 8,
+    marginBottom: 4,
+    letterSpacing: 0.5,
   },
-  motivational: {
-    fontSize: 14,
-    fontStyle: "italic",
-    marginBottom: 20,
-    textAlign: "center",
-    paddingHorizontal: 10,
+  email: {
+    fontSize: 15,
+    opacity: 0.8,
+    marginBottom: 25,
+  },
+  card: {
+    width: "85%",
+    padding: 25,
+    borderRadius: 18,
+    alignItems: "center",
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 8,
+    elevation: 6,
   },
   button: {
-    flexDirection: "row",
+    width: "100%",
+    paddingVertical: 13,
+    borderRadius: 12,
+    marginVertical: 8,
     alignItems: "center",
-    backgroundColor: "#3A6DFF",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginTop: 10,
-  },
-  logout: {
-    backgroundColor: "#D9534F",
   },
   buttonText: {
-    color: "white",
+    color: "#fff",
     fontWeight: "bold",
-    marginLeft: 8,
+    fontSize: 16,
+    letterSpacing: 0.4,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "#1E1E1E",
+    width: "90%",
     borderRadius: 20,
     padding: 20,
-    alignItems: "center",
+    elevation: 10,
   },
   modalTitle: {
-    color: "white",
-    fontSize: 18,
-    marginBottom: 10,
+    fontSize: 22,
     fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
   },
-  avatarGridContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalAvatarGrid: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    margin: 10,
-  },
-  closeModal: {
-    backgroundColor: "#3A6DFF",
+  input: {
+    width: "100%",
+    borderWidth: 1.5,
+    borderRadius: 10,
     padding: 10,
-    borderRadius: 12,
-    marginTop: 10,
+    marginBottom: 20,
   },
+  subTitle: { fontSize: 16, fontWeight: "600", marginBottom: 10 },
+  avatarOption: {
+    marginRight: 10,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  avatarImage: { width: 80, height: 80, borderRadius: 10 },
+  modalButtons: { flexDirection: "row", justifyContent: "space-between", marginTop: 20 },
 });

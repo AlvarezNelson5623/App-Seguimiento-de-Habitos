@@ -10,6 +10,8 @@
    npm install --save-dev @types/axios
    npx expo install expo-image-picker
    npx expo install expo-auth-session expo-web-browser
+   npm install @react-native-async-storage/async-storage
+
    ```
 
 2. Start the app

@@ -18,7 +18,7 @@ CREATE DATABASE IF NOT EXISTS `habitosdb`
   DEFAULT CHARACTER SET utf8mb4 
   COLLATE utf8mb4_general_ci;
 
-USE `habitosbd`;
+USE `habitosdb`;
 
 -- --------------------------------------------------
 -- Estructura de tabla para la tabla `usuarios`

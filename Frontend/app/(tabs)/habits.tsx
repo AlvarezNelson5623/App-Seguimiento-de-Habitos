@@ -1,111 +1,64 @@
-import { useEffect, useState, useContext } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import React, { useContext } from "react";
+import { View, Text, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
-import Animated, { FadeInUp } from "react-native-reanimated";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
 import { ThemeContext } from "../_layout";
 
 export default function HabitsScreen() {
-  const navigation = useNavigation();
   const { isDark } = useContext(ThemeContext);
-  const [habits, setHabits] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const colors = {
-    background: isDark ? "#0E1116" : "#F4F6FB",
-    text: isDark ? "#FFFFFF" : "#0B0B0B",
-    subtext: isDark ? "#B0B0B0" : "#6B6B6B",
+    background: isDark ? "#121212" : "#F7F9FC",
+    text: isDark ? "#FFFFFF" : "#000000",
+    subtext: isDark ? "#BBBBBB" : "#555555",
     accent: isDark ? "#3A6DFF" : "#007AFF",
     surface: isDark ? "#1E1E1E" : "#FFFFFF",
-    soft: isDark ? "#2A2A2A" : "#E8E8E8",
   };
 
-  useEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
-
-  useEffect(() => {
-    const fetchHabits = async () => {
-      try {
-        const res = await fetch("http://localhost:3000/api/habits"); // 👈 Ajusta el endpoint a tu backend
-        const data = await res.json();
-        setHabits(data);
-      } catch (error) {
-        console.error("Error al obtener hábitos:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHabits();
-  }, []);
-
-  if (loading) {
-    return (
-      <ThemedView style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
-        <ThemedText style={{ marginTop: 10, color: colors.text }}>Cargando hábitos...</ThemedText>
-      </ThemedView>
-    );
-  }
-
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <ThemedText type="title" style={[styles.headerTitle, { color: colors.text }]}>
-          Selecciona tus hábitos
-        </ThemedText>
-        <ThemedText type="default" style={[styles.headerSubtitle, { color: colors.subtext }]}>
-          Escoge los hábitos que quieres seguir
-        </ThemedText>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.text }]}>
+        <Ionicons name="construct-outline" size={50} color={colors.accent} />
+        <Text style={[styles.title, { color: colors.text }]}>
+          Hábitos
+        </Text>
+        <Text style={[styles.title, { color: colors.text }]}>
+          En construcción 🚧
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.subtext }]}>
+          Estamos trabajando para que pronto puedas gestionar tus hábitos aquí.
+        </Text>
       </View>
-
-      <ScrollView style={styles.habitsContainer}>
-        {habits.length > 0 ? (
-          habits.map((habit) => (
-            <Animated.View
-              key={habit.id}
-              entering={FadeInUp.duration(400).delay(100 * habit.id)}
-              style={[styles.habitCard, { backgroundColor: colors.surface, borderColor: colors.accent }]}
-            >
-              <TouchableOpacity style={styles.checkbox}>
-                <Ionicons name="ellipse-outline" size={24} color={colors.accent} />
-              </TouchableOpacity>
-              <ThemedText style={[styles.habitText, { color: colors.text }]}>{habit.nombre}</ThemedText>
-              <Ionicons name="information-circle-outline" size={20} color={colors.subtext} />
-            </Animated.View>
-          ))
-        ) : (
-          <View style={styles.noHabitsContainer}>
-            <ThemedText style={[styles.noHabitsText, { color: colors.subtext }]}>
-              No hay hábitos disponibles 😅
-            </ThemedText>
-          </View>
-        )}
-      </ScrollView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 45, paddingHorizontal: 18 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { marginBottom: 20 },
-  headerTitle: { fontSize: 28, fontWeight: "700", letterSpacing: 0.3 },
-  headerSubtitle: { fontSize: 16 },
-  habitsContainer: { flex: 1 },
-  habitCard: {
-    flexDirection: "row",
+  container: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    justifyContent: "space-between",
-    borderWidth: 1,
+    padding: 20,
   },
-  habitText: { flex: 1, marginHorizontal: 10, fontSize: 15 },
-  checkbox: { marginRight: 10 },
-  noHabitsContainer: { alignItems: "center", marginTop: 40 },
-  noHabitsText: { fontStyle: "italic" },
+  card: {
+    width: "90%",
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 30,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 16,
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 8,
+    lineHeight: 20,
+  },
 });

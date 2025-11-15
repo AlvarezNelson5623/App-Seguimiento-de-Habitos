@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "```bash # Inicializar proyecto npm init -y",
+  "description": "",
   "type": "module",
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -18,7 +18,7 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.15.3"
+    "mysql2": "^3.15.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

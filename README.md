@@ -58,13 +58,33 @@ CREATE TABLE `usuarios_habitos` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `usuario_id` INT NOT NULL,
   `habito_id` INT NOT NULL,
-  `fecha_inicio` DATE DEFAULT (CURRENT_DATE),
-  `hora_objetivo` TIME DEFAULT NULL,
-  `activo` TINYINT(1) DEFAULT 1,
-  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`habito_id`) REFERENCES `habitos`(`id`) ON DELETE CASCADE,
-  UNIQUE KEY (`usuario_id`, `habito_id`) -- evita duplicar el mismo hábito en un usuario
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+  -- Fecha en que el usuario empieza el hábito
+  `fecha_inicio` DATE DEFAULT (CURRENT_DATE),
+
+  -- Para hábitos con hora fija (ej: caminar 7:00 AM)
+  `hora_objetivo` TIME DEFAULT NULL,
+
+  -- Frecuencia: diario, semanal, mensual
+  `frecuencia` ENUM('diario', 'semanal', 'mensual') DEFAULT 'diario',
+
+  -- Meta numérica (ej: 8 vasos, 30 minutos, 2 veces por semana)
+  `meta` INT DEFAULT 1,
+
+  -- Días de la semana si es semanal (ej: "lunes,miércoles,viernes")
+  `dias_semana` VARCHAR(100) DEFAULT NULL,
+
+  -- Fecha de finalización si aplica
+  `fecha_fin` DATE DEFAULT NULL,
+
+  -- Notas del usuario
+  `notas` VARCHAR(255) DEFAULT NULL,
+
+  `activo` TINYINT(1) DEFAULT 1,
+
+  UNIQUE KEY (`usuario_id`, `habito_id`),
+  FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`habito_id`) REFERENCES `habitos`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
   ```

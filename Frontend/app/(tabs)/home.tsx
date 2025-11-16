@@ -6,6 +6,7 @@ import { useLayoutEffect, useState, useEffect, useContext } from "react";
 import { useNavigation } from "expo-router";
 import { ThemeContext } from "../_layout";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { router } from "expo-router";
 
 export default function InicioScreen() {
   const navigation = useNavigation();
@@ -150,7 +151,8 @@ export default function InicioScreen() {
       </ScrollView>
 
       {/* Botón crear hábito */}
-      <TouchableOpacity style={[styles.addHabitButton, { backgroundColor: colors.accent }]}>
+      <TouchableOpacity onPress={() => router.push("/create-habit")}
+      style={[styles.addHabitButton, { backgroundColor: colors.accent }]}>
         <Ionicons name="add-circle-outline" size={22} color="#fff" />
         <ThemedText style={[styles.addHabitText, { color: "#fff" }]}>
           Crear nuevo hábito

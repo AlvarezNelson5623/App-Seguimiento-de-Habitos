@@ -1,9 +1,21 @@
 import React, { useContext, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+} from "react-native";
 import { ThemeContext } from "./_layout";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { API_URL } from "../config/api"; 
+import { API_URL } from "../config/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect } from "react";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function ConfigureHabitScreen() {
   const { isDark } = useContext(ThemeContext);
@@ -13,10 +25,22 @@ export default function ConfigureHabitScreen() {
   const [frecuencia, setFrecuencia] = useState("diario");
   const [meta, setMeta] = useState("1");
   const [hora_objetivo, setHoraObjetivo] = useState("");
-  const [diasSemana, setDiasSemana] = useState("");
+  const [diasSeleccionados, setDiasSeleccionados] = useState<string[]>([]);
   const [notas, setNotas] = useState("");
 
-  const userId = 1; // cambiar con login real
+  const [userId, setUserId] = useState<number | null>(null);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      const userData = await AsyncStorage.getItem("userData");
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        setUserId(parsed.id);
+      }
+    };
+    loadUser();
+  }, []);
 
   const colors = {
     background: isDark ? "#0E0F12" : "#F4F6FA",
@@ -27,22 +51,37 @@ export default function ConfigureHabitScreen() {
     border: isDark ? "#333" : "#DDD",
   };
 
+  const days = [
+    { label: "L", value: "lunes" },
+    { label: "M", value: "martes" },
+    { label: "X", value: "miércoles" },
+    { label: "J", value: "jueves" },
+    { label: "V", value: "viernes" },
+    { label: "S", value: "sábado" },
+    { label: "D", value: "domingo" },
+  ];
+
+  const toggleDia = (dia: string) => {
+    setDiasSeleccionados((prev) =>
+      prev.includes(dia) ? prev.filter((d) => d !== dia) : [...prev, dia]
+    );
+  };
+
   const saveHabit = async () => {
     try {
-        const res = await fetch(`${API_URL}/usuarios-habitos/asignar`, {
+      const res = await fetch(`${API_URL}/usuarios-habitos/asignar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            usuario_id: userId,
-            habito_id: Number(habitId),
-            frecuencia,
-            meta: Number(meta),
-            hora_objetivo,
-            dias_semana: diasSemana,
-            notas,
+          usuario_id: userId,
+          habito_id: Number(habitId),
+          frecuencia,
+          meta: Number(meta),
+          hora_objetivo,
+          dias_semana: diasSeleccionados.join(","),
+          notas,
         }),
-        });
-
+      });
 
       const data = await res.json();
 
@@ -61,7 +100,6 @@ export default function ConfigureHabitScreen() {
   return (
     <ScrollView style={{ backgroundColor: colors.background }}>
       <View style={[styles.container, { paddingTop: 60 }]}>
-
         <Text style={[styles.title, { color: colors.text }]}>
           Configurar hábito
         </Text>
@@ -79,7 +117,8 @@ export default function ConfigureHabitScreen() {
               style={[
                 styles.optionButton,
                 {
-                  backgroundColor: frecuencia === f ? colors.accent : colors.surface,
+                  backgroundColor:
+                    frecuencia === f ? colors.accent : colors.surface,
                   borderColor: colors.border,
                 },
               ]}
@@ -98,9 +137,18 @@ export default function ConfigureHabitScreen() {
         </View>
 
         {/* Meta */}
-        <Text style={[styles.label, { color: colors.subtext }]}>Meta (número)</Text>
+        <Text style={[styles.label, { color: colors.subtext }]}>
+          Meta (número)
+        </Text>
         <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: colors.surface,
+              color: colors.text,
+              borderColor: colors.border,
+            },
+          ]}
           keyboardType="numeric"
           value={meta}
           onChangeText={setMeta}
@@ -108,34 +156,89 @@ export default function ConfigureHabitScreen() {
           placeholderTextColor={colors.subtext}
         />
 
-        {/* Hora */}
-        <Text style={[styles.label, { color: colors.subtext }]}>Hora objetivo (opcional)</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-          placeholder="Formato HH:MM"
-          placeholderTextColor={colors.subtext}
-          value={hora_objetivo}
-          onChangeText={setHoraObjetivo}
-        />
+        {/* Hora objetivo → con selector */}
+        <Text style={[styles.label, { color: colors.subtext }]}>
+          Hora objetivo (opcional)
+        </Text>
+
+        <TouchableOpacity
+          style={[
+            styles.selectButton,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+          onPress={() => setShowTimePicker(true)}
+        >
+          <Ionicons name="time-outline" size={20} color={colors.accent} />
+          <Text style={{ color: colors.text, marginLeft: 8 }}>
+            {hora_objetivo !== "" ? hora_objetivo : "Seleccionar hora"}
+          </Text>
+        </TouchableOpacity>
+
+        {showTimePicker && (
+          <DateTimePicker
+            mode="time"
+            value={new Date()}
+            is24Hour={true}
+            onChange={(event, selected) => {
+              setShowTimePicker(false);
+              if (selected) {
+                const hrs = selected.getHours().toString().padStart(2, "0");
+                const min = selected.getMinutes().toString().padStart(2, "0");
+                setHoraObjetivo(`${hrs}:${min}`);
+              }
+            }}
+          />
+        )}
 
         {/* Días de la semana */}
         {frecuencia === "semanal" && (
           <>
-            <Text style={[styles.label, { color: colors.subtext }]}>Días de la semana</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
-              placeholder="Ej: lunes,miércoles,viernes"
-              placeholderTextColor={colors.subtext}
-              value={diasSemana}
-              onChangeText={setDiasSemana}
-            />
+            <Text style={[styles.label, { color: colors.subtext }]}>
+              Días de la semana
+            </Text>
+
+            <View style={styles.daysRow}>
+              {days.map((d) => (
+                <TouchableOpacity
+                  key={d.value}
+                  style={[
+                    styles.dayChip,
+                    {
+                      backgroundColor: diasSeleccionados.includes(d.value)
+                        ? colors.accent
+                        : colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  onPress={() => toggleDia(d.value)}
+                >
+                  <Text
+                    style={{
+                      color: diasSeleccionados.includes(d.value)
+                        ? "#fff"
+                        : colors.text,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {d.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </>
         )}
 
         {/* Notas */}
         <Text style={[styles.label, { color: colors.subtext }]}>Notas</Text>
         <TextInput
-          style={[styles.textarea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+          style={[
+            styles.textarea,
+            {
+              backgroundColor: colors.surface,
+              color: colors.text,
+              borderColor: colors.border,
+            },
+          ]}
           placeholder="Notas adicionales..."
           placeholderTextColor={colors.subtext}
           multiline
@@ -144,7 +247,10 @@ export default function ConfigureHabitScreen() {
         />
 
         {/* Botones */}
-        <TouchableOpacity style={[styles.saveButton, { backgroundColor: colors.accent }]} onPress={saveHabit}>
+        <TouchableOpacity
+          style={[styles.saveButton, { backgroundColor: colors.accent }]}
+          onPress={saveHabit}
+        >
           <Ionicons name="save-outline" color="#FFF" size={20} />
           <Text style={styles.saveButtonText}>Guardar</Text>
         </TouchableOpacity>
@@ -153,9 +259,12 @@ export default function ConfigureHabitScreen() {
           style={[styles.cancelButton, { borderColor: colors.accent }]}
           onPress={() => router.back()}
         >
-          <Text style={[styles.cancelButtonText, { color: colors.accent }]}>Cancelar</Text>
+          <Text
+            style={[styles.cancelButtonText, { color: colors.accent }]}
+          >
+            Cancelar
+          </Text>
         </TouchableOpacity>
-
       </View>
     </ScrollView>
   );
@@ -187,6 +296,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
+  selectButton: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
   textarea: {
     padding: 14,
     borderRadius: 12,
@@ -199,6 +315,18 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   optionButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  daysRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 10,
+  },
+  dayChip: {
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 10,

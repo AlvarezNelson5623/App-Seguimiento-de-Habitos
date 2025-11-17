@@ -3,6 +3,9 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from "reac
 import { ThemeContext } from "./_layout";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect } from "react";
+import { API_URL } from "../config/api"; 
 
 export default function CreateHabitScreen() {
   const { isDark } = useContext(ThemeContext);
@@ -24,7 +27,18 @@ export default function CreateHabitScreen() {
     buttonText: "#FFFFFF",
   };
 
-  const userId = 1; // ← después se conecta al login
+  //const userId 
+  const [userId, setUserId] = useState<number | null>(null);
+  useEffect(() => {
+    const loadUser = async () => {
+      const userData = await AsyncStorage.getItem("userData");
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        setUserId(parsed.id); // AQUI OBTIENE EL ID REAL DEL LOGIN
+      }
+    };
+    loadUser();
+  }, []);
 
   const createHabit = async () => {
     if (!nombre.trim()) {
@@ -32,7 +46,7 @@ export default function CreateHabitScreen() {
     }
 
     try {
-      const res = await fetch("http://192.168.1.99:3000/api/habitos", {
+      const res = await fetch(`${API_URL}/habitos`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -7,6 +7,14 @@ import { useNavigation } from "expo-router";
 import { ThemeContext } from "../_layout";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { router } from "expo-router";
+import { API_URL } from "../../config/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+interface Habit {
+  id: number;
+  nombre: string;
+}
+
 
 export default function InicioScreen() {
   const navigation = useNavigation();
@@ -18,7 +26,6 @@ export default function InicioScreen() {
     subtext: isDark ? "#B0B0B0" : "#6B6B6B",
     accent: isDark ? "#3A6DFF" : "#007AFF",
     surface: isDark ? "#1E1E1E" : "#FFFFFF",
-    soft: isDark ? "#2A2A2A" : "#E8E8E8",
   };
 
   useLayoutEffect(() => {
@@ -29,7 +36,41 @@ export default function InicioScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekStart, setWeekStart] = useState(getStartOfWeek(new Date()));
   const [weekDays, setWeekDays] = useState<{ day: string; date: Date }[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
 
+  // Cargar ID usuario
+  useEffect(() => {
+    const loadUser = async () => {
+      const userData = await AsyncStorage.getItem("userData");
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        setUserId(parsed.id);
+      }
+    };
+    loadUser();
+  }, []);
+
+  // 📌 Cargar hábitos del usuario desde la BD
+  const loadHabits = async () => {
+    try {
+      const response = await fetch(
+        `${API_URL}/habitos/usuario/${userId}`
+
+      );
+      const data = await response.json();
+      setHabits(data);
+    } catch (err) {
+      console.log("Error cargando hábitos:", err);
+    }
+  };
+
+  // 🔄 Recargar hábitos 
+  useEffect(() => {
+  if (userId) loadHabits();
+  }, [userId]);
+
+  // Generar días de la semana
   useEffect(() => {
     const days = [];
     const dayNames = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
@@ -54,10 +95,10 @@ export default function InicioScreen() {
   };
 
   const formattedDateInfo = getDateInfo(selectedDate, currentDate);
-  const habits = [{ id: 1, text: "EJEMPLO: Tomar 2L de agua 💧" }];
 
   return (
     <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+      
       {/* Header */}
       <View style={styles.header}>
         <ThemedText type="title" style={[styles.headerTitle, { color: colors.text }]}>
@@ -76,31 +117,17 @@ export default function InicioScreen() {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarScroll}>
           {weekDays.map((item, i) => {
-            const isToday = item.date.toDateString() === currentDate.toDateString();
             const isSelected = item.date.toDateString() === selectedDate.toDateString();
             return (
               <TouchableOpacity
                 key={i}
-                style={[
-                  styles.day,
-                  isSelected && { backgroundColor: colors.accent },
-                ]}
+                style={[styles.day, isSelected && { backgroundColor: colors.accent }]}
                 onPress={() => setSelectedDate(item.date)}
               >
-                <ThemedText
-                  style={[
-                    styles.dayText,
-                    { color: isSelected ? "#fff" : colors.subtext },
-                  ]}
-                >
+                <ThemedText style={[styles.dayText, { color: isSelected ? "#fff" : colors.subtext }]}>
                   {item.day}
                 </ThemedText>
-                <ThemedText
-                  style={[
-                    styles.dayDate,
-                    { color: isSelected ? "#fff" : colors.text },
-                  ]}
-                >
+                <ThemedText style={[styles.dayDate, { color: isSelected ? "#fff" : colors.text }]}>
                   {item.date.getDate()}
                 </ThemedText>
               </TouchableOpacity>
@@ -113,32 +140,26 @@ export default function InicioScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Filtros */}
-      <View style={styles.filters}>
-        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.soft }]}>
-          <ThemedText style={{ color: colors.text }}>Todos</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.accent, flexDirection: "row" }]}>
-          <Ionicons name="sunny-outline" size={16} color="white" />
-          <ThemedText style={{ color: "#fff", fontWeight: "bold", marginLeft: 5 }}>Mañana</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.soft }]}>
-          <ThemedText style={{ color: colors.text }}>Tarde</ThemedText>
-        </TouchableOpacity>
-      </View>
+      {/* ============================= */}
+      {/*        HÁBITOS ACTIVOS        */}
+      {/* ============================= */}
 
-      {/* Lista de hábitos */}
       <ScrollView style={styles.habitsContainer}>
         {habits.length > 0 ? (
-          habits.map((habit) => (
+          habits.map((h, i) => (
             <Animated.View
-              key={habit.id}
-              entering={FadeInUp.duration(400).delay(100 * habit.id)}
-              style={[styles.habitCard, { backgroundColor: colors.surface, borderColor: colors.accent }]}
+              key={h.id}
+              entering={FadeInUp.duration(400).delay(80 * i)}
+              style={[
+                styles.habitCard,
+                { backgroundColor: colors.surface, borderColor: colors.accent }
+              ]}
             >
-              <Ionicons name="checkmark-circle-outline" size={24} color={colors.accent} />
-              <ThemedText style={[styles.habitText, { color: colors.text }]}>{habit.text}</ThemedText>
-              <Ionicons name="ellipsis-horizontal" size={20} color={colors.subtext} />
+              <Ionicons name="checkmark-circle-outline" size={25} color={colors.accent} />
+              <ThemedText style={[styles.habitText, { color: colors.text }]}>
+                {h.nombre}
+              </ThemedText>
+              <Ionicons name="ellipsis-horizontal" size={22} color={colors.subtext} />
             </Animated.View>
           ))
         ) : (
@@ -151,12 +172,12 @@ export default function InicioScreen() {
       </ScrollView>
 
       {/* Botón crear hábito */}
-      <TouchableOpacity onPress={() => router.push("/create-habit")}
-      style={[styles.addHabitButton, { backgroundColor: colors.accent }]}>
+      <TouchableOpacity
+        onPress={() => router.push("/create-habit")}
+        style={[styles.addHabitButton, { backgroundColor: colors.accent }]}
+      >
         <Ionicons name="add-circle-outline" size={22} color="#fff" />
-        <ThemedText style={[styles.addHabitText, { color: "#fff" }]}>
-          Crear nuevo hábito
-        </ThemedText>
+        <ThemedText style={[styles.addHabitText, { color: "#fff" }]}>Crear nuevo hábito</ThemedText>
       </TouchableOpacity>
     </ThemedView>
   );
@@ -209,34 +230,23 @@ const styles = StyleSheet.create({
   },
   dayText: { fontSize: 12, fontWeight: "600" },
   dayDate: { fontSize: 14, fontWeight: "700", marginTop: 2 },
-  filters: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 12,
-  },
-  filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-  },
+
+  // HÁBITOS
   habitsContainer: { flex: 1 },
   habitCard: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 16,
-    padding: 16,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.3,
     marginBottom: 12,
-    justifyContent: "space-between",
-    borderWidth: 1,
+    gap: 12,
   },
-  habitText: { flex: 1, marginHorizontal: 10, fontSize: 15 },
+  habitText: { fontSize: 16, fontWeight: "600" },
   noHabitsContainer: { alignItems: "center", marginTop: 40 },
   noHabitsText: { fontStyle: "italic" },
+
+  // BOTÓN
   addHabitButton: {
     flexDirection: "row",
     alignItems: "center",

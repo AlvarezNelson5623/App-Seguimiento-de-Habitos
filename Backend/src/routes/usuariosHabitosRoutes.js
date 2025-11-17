@@ -39,4 +39,28 @@ router.post("/asignar", async (req, res) => {
   }
 });
 
+
+// Eliminar (desactivar) un hábito asignado al usuario
+router.delete("/eliminar/:usuarioId/:habitoId", async (req, res) => {
+  const { usuarioId, habitoId } = req.params;
+
+  try {
+    await db.query(
+      `UPDATE usuarios_habitos 
+       SET activo = 0
+       WHERE usuario_id = ? AND habito_id = ?`,
+      [usuarioId, habitoId]
+    );
+
+    res.json({ success: true, message: "Hábito eliminado correctamente" });
+
+  } catch (error) {
+    console.error("Error eliminando hábito:", error);
+    res.status(500).json({ message: "Error al eliminar hábito" });
+  }
+});
+
+
+
+
 export default router;

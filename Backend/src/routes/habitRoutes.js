@@ -9,12 +9,23 @@ router.get("/usuario/:id", async (req, res) => {
 
   try {
     const [habitos] = await db.query(
-      `SELECT h.*
-       FROM usuarios_habitos uh
-       JOIN habitos h ON h.id = uh.habito_id
-       WHERE uh.usuario_id = ? AND uh.activo = 1`,
-      [usuarioId]
-    );
+          `SELECT 
+            h.id,
+            h.nombre,
+            h.descripcion,
+            h.categoria,
+            uh.frecuencia,
+            uh.meta,
+            uh.hora_objetivo,
+            uh.dias_semana,
+            uh.notas,
+            uh.fecha_inicio,
+            uh.fecha_fin
+          FROM usuarios_habitos uh
+          JOIN habitos h ON h.id = uh.habito_id
+          WHERE uh.usuario_id = ? AND uh.activo = 1`,
+          [usuarioId]
+        );
 
     res.json(habitos);
   } catch (error) {
@@ -24,6 +35,7 @@ router.get("/usuario/:id", async (req, res) => {
 });
 
 // Obtener hábitos recomendados (los que el usuario aún no tiene)
+// Obtener hábitos recomendados (solo globales o creados por el usuario)
 router.get("/recomendados/:id", async (req, res) => {
   const usuarioId = req.params.id;
 
@@ -31,10 +43,16 @@ router.get("/recomendados/:id", async (req, res) => {
     const [habitos] = await db.query(
       `SELECT *
        FROM habitos
-       WHERE id NOT IN (
-         SELECT habito_id FROM usuarios_habitos WHERE usuario_id = ?
-       )`,
-      [usuarioId]
+       WHERE 
+         -- Excluir los hábitos que el usuario ya tiene
+         id NOT IN (
+           SELECT habito_id FROM usuarios_habitos WHERE usuario_id = ? AND activo IN (1,2)
+         )
+         AND (
+           es_global = 1
+           OR (es_global = 0 AND creado_por = ?)
+         )`,
+      [usuarioId, usuarioId]
     );
 
     res.json(habitos);
@@ -49,6 +67,7 @@ router.get("/recomendados/:id", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const { nombre, descripcion, categoria, creado_por } = req.body;
+    
 
     if (!nombre || !creado_por) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });

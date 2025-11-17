@@ -11,6 +11,9 @@
    npx expo install expo-image-picker
    npx expo install expo-auth-session expo-web-browser
    npm install @react-native-async-storage/async-storage
+   npx expo install react-native-modal-datetime-picker @react-native-community/datetimepicker
+
+
 
    ```
 

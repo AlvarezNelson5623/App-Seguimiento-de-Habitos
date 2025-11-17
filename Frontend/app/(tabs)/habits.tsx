@@ -11,19 +11,51 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { ThemeContext } from "../_layout";
 import { useRouter } from "expo-router";
+import { API_URL } from "../../config/api"; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+
+// =========================
+// INTERFAZ DEL HÁBITO
+// =========================
+interface Habit {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  frecuencia?: string;
+  meta?: string;
+  hora_objetivo?: string;
+  dias_semana?: string;
+  notas?: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+}
+
 
 export default function HabitsScreen() {
   const { isDark } = useContext(ThemeContext);
   const router = useRouter();
 
-  const [habitosActuales, setHabitosActuales] = useState([]);
-  const [habitosRecomendados, setHabitosRecomendados] = useState([]);
+  const [habitosActuales, setHabitosActuales] = useState<Habit[]>([]);
+  const [habitosRecomendados, setHabitosRecomendados] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedHabit, setSelectedHabit] = useState(null);
+  const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
 
-  const userId = 1;
+  const [userId, setUserId] = useState<number | null>(null);
+
+  // Cargar ID usuario
+  useEffect(() => {
+    const loadUser = async () => {
+      const userData = await AsyncStorage.getItem("userData");
+      if (userData) {
+        const parsed = JSON.parse(userData);
+        setUserId(parsed.id);
+      }
+    };
+    loadUser();
+  }, []);
 
   const colors = {
     background: isDark ? "#0E0F12" : "#F4F6FA",
@@ -33,7 +65,7 @@ export default function HabitsScreen() {
     surface: isDark ? "#181A1F" : "#FFFFFF",
   };
 
-  const openHabitModal = (habit) => {
+  const openHabitModal = (habit: Habit) => {
     setSelectedHabit(habit);
     setModalVisible(true);
   };
@@ -43,28 +75,36 @@ export default function HabitsScreen() {
     setSelectedHabit(null);
   };
 
+  // =========================
+  // FUNCIÓN PARA CARGAR HÁBITOS
+  // =========================
+  const fetchHabits = async () => {
+    if (!userId) return;
+
+    try {
+      const resActuales = await fetch(`${API_URL}/habitos/usuario/${userId}`);
+      const actuales = await resActuales.json();
+
+      const resRecomendados = await fetch(`${API_URL}/habitos/recomendados/${userId}`);
+      const recomendados = await resRecomendados.json();
+
+      setHabitosActuales(actuales);
+      setHabitosRecomendados(recomendados);
+    } catch (err) {
+      console.error("Error cargando hábitos:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Llamar fetchHabits al inicio
   useEffect(() => {
-    const fetchHabits = async () => {
-      try {
-        const resActuales = await fetch(`http://192.168.1.99:3000/api/habitos/usuario/${userId}`);
-        const actuales = await resActuales.json();
-
-        const resRecomendados = await fetch(`http://192.168.1.99:3000/api/habitos/recomendados/${userId}`);
-        const recomendados = await resRecomendados.json();
-
-        setHabitosActuales(actuales);
-        setHabitosRecomendados(recomendados);
-      } catch (err) {
-        console.error("Error cargando hábitos:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchHabits();
-  }, []);
+  }, [userId]);
 
-  if (loading) {
+
+
+  if (loading || userId === null) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.accent} />
@@ -129,49 +169,96 @@ export default function HabitsScreen() {
         >
           <View style={[styles.modalBackground]}>
             <View style={[styles.modalContainer, { backgroundColor: colors.surface }]}>
+
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {selectedHabit?.nombre}
               </Text>
+
               <Text style={[styles.modalSubtitle, { color: colors.subtext }]}>
                 {selectedHabit?.descripcion || "Sin descripción"}
               </Text>
 
-              <Text style={[styles.modalLabel, { color: colors.subtext }]}>
-                Frecuencia: {selectedHabit?.frecuencia || "-"}
-              </Text>
-              <Text style={[styles.modalLabel, { color: colors.subtext }]}>
-                Meta: {selectedHabit?.meta || "-"}
-              </Text>
+              {selectedHabit?.frecuencia && (
+                <Text style={[styles.modalLabel, { color: colors.subtext }]}>
+                  Frecuencia: {selectedHabit.frecuencia}
+                </Text>
+              )}
+
+              {selectedHabit?.meta && (
+                <Text style={[styles.modalLabel, { color: colors.subtext }]}>
+                  Meta: {selectedHabit.meta}
+                </Text>
+              )}
+
               {selectedHabit?.hora_objetivo && (
                 <Text style={[styles.modalLabel, { color: colors.subtext }]}>
                   Hora objetivo: {selectedHabit.hora_objetivo}
                 </Text>
               )}
+
               {selectedHabit?.dias_semana && (
                 <Text style={[styles.modalLabel, { color: colors.subtext }]}>
                   Días: {selectedHabit.dias_semana}
                 </Text>
               )}
+
               {selectedHabit?.notas && (
                 <Text style={[styles.modalLabel, { color: colors.subtext }]}>
                   Notas: {selectedHabit.notas}
                 </Text>
               )}
 
+              {/* =========================
+                  BOTÓN ELIMINAR HÁBITO
+              =========================== */}
+              <TouchableOpacity
+                style={[styles.deleteButton]}
+                onPress={async () => {
+                  if (!selectedHabit || !userId) return;
+
+                  try {
+                    const res = await fetch(
+                      `${API_URL}/usuarios-habitos/eliminar/${userId}/${selectedHabit.id}`,
+                      { method: "DELETE" }
+                    );
+
+                    const data = await res.json();
+                    if (data.success) {
+                      alert("Hábito eliminado correctamente");
+                      setSelectedHabit(null);
+                      setModalVisible(false);
+                      fetchHabits();
+                    } else {
+                      alert("Error eliminando hábito");
+                    }
+
+                  } catch (error) {
+                    console.error("Error eliminando hábito:", error);
+                  }
+                }}
+              >
+                <Text style={styles.deleteButtonText}>Eliminar</Text>
+              </TouchableOpacity>
+
+
+              {/* BOTÓN CERRAR */}
               <TouchableOpacity
                 style={[styles.closeButton, { backgroundColor: colors.accent }]}
                 onPress={closeHabitModal}
               >
                 <Text style={{ color: "#FFF", fontWeight: "600" }}>Cerrar</Text>
               </TouchableOpacity>
+
             </View>
           </View>
         </Modal>
+
 
       </View>
     </ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -238,4 +325,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
+
+  deleteButton: {
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 10,
+    backgroundColor: "#D9534F",
+  },
+
+  deleteButtonText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 16,
+  }
 });

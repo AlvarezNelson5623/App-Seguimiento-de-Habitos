@@ -82,9 +82,19 @@ CREATE TABLE `usuarios_habitos` (
 
   `activo` TINYINT(1) DEFAULT 1,
 
-  UNIQUE KEY (`usuario_id`, `habito_id`),
+  UNIQUE KEY (`id`),
   FOREIGN KEY (`usuario_id`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`habito_id`) REFERENCES `habitos`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE registros_habitos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  usuario_habito_id INT NOT NULL,
+  fecha DATE NOT NULL DEFAULT (CURRENT_DATE),
+  realizado TINYINT(1) NOT NULL DEFAULT 0,
+
+  FOREIGN KEY (usuario_habito_id) REFERENCES usuarios_habitos(id)
+    ON DELETE CASCADE
+);
 
   ```

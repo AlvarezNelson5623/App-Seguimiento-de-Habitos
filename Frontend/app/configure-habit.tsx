@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,13 @@ import {
   ScrollView,
   Alert,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 import { ThemeContext } from "./_layout";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { API_URL } from "../config/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 export default function ConfigureHabitScreen() {
@@ -98,175 +98,194 @@ export default function ConfigureHabitScreen() {
   };
 
   return (
-    <ScrollView style={{ backgroundColor: colors.background }}>
-      <View style={[styles.container, { paddingTop: 60 }]}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          Configurar hábito
-        </Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+    >
+      <ScrollView
+        style={{ backgroundColor: colors.background }}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={[styles.container, { paddingTop: 60 }]}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Configurar hábito
+          </Text>
 
-        <Text style={[styles.habitName, { color: colors.accent }]}>
-          {habitName}
-        </Text>
+          <Text style={[styles.habitName, { color: colors.accent }]}>
+            {habitName}
+          </Text>
 
-        {/* Frecuencia */}
-        <Text style={[styles.label, { color: colors.subtext }]}>Frecuencia</Text>
-        <View style={styles.row}>
-          {["diario", "semanal", "mensual"].map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[
-                styles.optionButton,
-                {
-                  backgroundColor:
-                    frecuencia === f ? colors.accent : colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
-              onPress={() => setFrecuencia(f)}
-            >
-              <Text
-                style={{
-                  color: frecuencia === f ? "#FFF" : colors.text,
-                  fontWeight: "600",
-                }}
+          {/* Frecuencia */}
+          <Text style={[styles.label, { color: colors.subtext }]}>
+            Frecuencia
+          </Text>
+          <View style={styles.row}>
+            {["diario", "semanal", "mensual"].map((f) => (
+              <TouchableOpacity
+                key={f}
+                style={[
+                  styles.optionButton,
+                  {
+                    backgroundColor:
+                      frecuencia === f ? colors.accent : colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={() => setFrecuencia(f)}
               >
-                {f}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Meta */}
-        <Text style={[styles.label, { color: colors.subtext }]}>
-          Meta (número)
-        </Text>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: colors.surface,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          keyboardType="numeric"
-          value={meta}
-          onChangeText={setMeta}
-          placeholder="Ej: 8 vasos, 30 minutos..."
-          placeholderTextColor={colors.subtext}
-        />
-
-        {/* Hora objetivo → con selector */}
-        <Text style={[styles.label, { color: colors.subtext }]}>
-          Hora objetivo (opcional)
-        </Text>
-
-        <TouchableOpacity
-          style={[
-            styles.selectButton,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-          onPress={() => setShowTimePicker(true)}
-        >
-          <Ionicons name="time-outline" size={20} color={colors.accent} />
-          <Text style={{ color: colors.text, marginLeft: 8 }}>
-            {hora_objetivo !== "" ? hora_objetivo : "Seleccionar hora"}
-          </Text>
-        </TouchableOpacity>
-
-        {showTimePicker && (
-          <DateTimePicker
-            mode="time"
-            value={new Date()}
-            is24Hour={true}
-            onChange={(event, selected) => {
-              setShowTimePicker(false);
-              if (selected) {
-                const hrs = selected.getHours().toString().padStart(2, "0");
-                const min = selected.getMinutes().toString().padStart(2, "0");
-                setHoraObjetivo(`${hrs}:${min}`);
-              }
-            }}
-          />
-        )}
-
-        {/* Días de la semana */}
-        {frecuencia === "semanal" && (
-          <>
-            <Text style={[styles.label, { color: colors.subtext }]}>
-              Días de la semana
-            </Text>
-
-            <View style={styles.daysRow}>
-              {days.map((d) => (
-                <TouchableOpacity
-                  key={d.value}
-                  style={[
-                    styles.dayChip,
-                    {
-                      backgroundColor: diasSeleccionados.includes(d.value)
-                        ? colors.accent
-                        : colors.surface,
-                      borderColor: colors.border,
-                    },
-                  ]}
-                  onPress={() => toggleDia(d.value)}
+                <Text
+                  style={{
+                    color: frecuencia === f ? "#FFF" : colors.text,
+                    fontWeight: "600",
+                  }}
                 >
-                  <Text
-                    style={{
-                      color: diasSeleccionados.includes(d.value)
-                        ? "#fff"
-                        : colors.text,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {d.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
+                  {f}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        {/* Notas */}
-        <Text style={[styles.label, { color: colors.subtext }]}>Notas</Text>
-        <TextInput
-          style={[
-            styles.textarea,
-            {
-              backgroundColor: colors.surface,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="Notas adicionales..."
-          placeholderTextColor={colors.subtext}
-          multiline
-          value={notas}
-          onChangeText={setNotas}
-        />
-
-        {/* Botones */}
-        <TouchableOpacity
-          style={[styles.saveButton, { backgroundColor: colors.accent }]}
-          onPress={saveHabit}
-        >
-          <Ionicons name="save-outline" color="#FFF" size={20} />
-          <Text style={styles.saveButtonText}>Guardar</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.cancelButton, { borderColor: colors.accent }]}
-          onPress={() => router.back()}
-        >
-          <Text
-            style={[styles.cancelButtonText, { color: colors.accent }]}
-          >
-            Cancelar
+          {/* Meta */}
+          <Text style={[styles.label, { color: colors.subtext }]}>
+            Meta (número)
           </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.surface,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            keyboardType="numeric"
+            value={meta}
+            onChangeText={setMeta}
+            placeholder="Ej: 8 vasos, 30 minutos..."
+            placeholderTextColor={colors.subtext}
+          />
+
+          {/* Hora objetivo */}
+          <Text style={[styles.label, { color: colors.subtext }]}>
+            Hora objetivo (opcional)
+          </Text>
+
+          <TouchableOpacity
+            style={[
+              styles.selectButton,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Ionicons name="time-outline" size={20} color={colors.accent} />
+            <Text style={{ color: colors.text, marginLeft: 8 }}>
+              {hora_objetivo !== "" ? hora_objetivo : "Seleccionar hora"}
+            </Text>
+          </TouchableOpacity>
+
+          {showTimePicker && (
+            <DateTimePicker
+              mode="time"
+              value={new Date()}
+              is24Hour={true}
+              onChange={(event, selected) => {
+                setShowTimePicker(false);
+                if (selected) {
+                  const hrs = selected
+                    .getHours()
+                    .toString()
+                    .padStart(2, "0");
+                  const min = selected
+                    .getMinutes()
+                    .toString()
+                    .padStart(2, "0");
+                  setHoraObjetivo(`${hrs}:${min}`);
+                }
+              }}
+            />
+          )}
+
+          {/* Días de la semana */}
+          {frecuencia === "semanal" && (
+            <>
+              <Text style={[styles.label, { color: colors.subtext }]}>
+                Días de la semana
+              </Text>
+
+              <View style={styles.daysRow}>
+                {days.map((d) => (
+                  <TouchableOpacity
+                    key={d.value}
+                    style={[
+                      styles.dayChip,
+                      {
+                        backgroundColor: diasSeleccionados.includes(d.value)
+                          ? colors.accent
+                          : colors.surface,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={() => toggleDia(d.value)}
+                  >
+                    <Text
+                      style={{
+                        color: diasSeleccionados.includes(d.value)
+                          ? "#fff"
+                          : colors.text,
+                        fontWeight: "600",
+                      }}
+                    >
+                      {d.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* Notas */}
+          <Text style={[styles.label, { color: colors.subtext }]}>Notas</Text>
+          <TextInput
+            style={[
+              styles.textarea,
+              {
+                backgroundColor: colors.surface,
+                color: colors.text,
+                borderColor: colors.border,
+              },
+            ]}
+            placeholder="Notas adicionales..."
+            placeholderTextColor={colors.subtext}
+            multiline
+            value={notas}
+            onChangeText={setNotas}
+          />
+
+          {/* Botón guardar */}
+          <TouchableOpacity
+            style={[styles.saveButton, { backgroundColor: colors.accent }]}
+            onPress={saveHabit}
+          >
+            <Ionicons name="save-outline" color="#FFF" size={20} />
+            <Text style={styles.saveButtonText}>Guardar</Text>
+          </TouchableOpacity>
+
+          {/* Cancelar */}
+          <TouchableOpacity
+            style={[styles.cancelButton, { borderColor: colors.accent }]}
+            onPress={() => router.back()}
+          >
+            <Text
+              style={[styles.cancelButtonText, { color: colors.accent }]}
+            >
+              Cancelar
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

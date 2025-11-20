@@ -10,6 +10,7 @@ router.get("/usuario/:id", async (req, res) => {
   try {
     const [habitos] = await db.query(
           `SELECT 
+            uh.id AS usuario_habito_id,
             h.id,
             h.nombre,
             h.descripcion,

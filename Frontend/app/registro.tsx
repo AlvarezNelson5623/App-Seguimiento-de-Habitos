@@ -40,13 +40,13 @@ const RegistroScreen = () => {
   const { isDark } = useContext(ThemeContext);
   const isDarkMode = isDark ?? systemColorScheme === "dark";
 
-  // ✅ Configurar Google Auth
+  //  Configurar Google Auth
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: "156282232291-ap4t4ds1v4rgd380mmpmumnepnfcruva.apps.googleusercontent.com", 
     redirectUri: "https://auth.expo.io/@nelsonalvarez5623/App-Seguimiento-de-Habitos",
   });
 
-  // ✅ Manejo del resultado del inicio de sesión con Google
+  //  Manejo del resultado del inicio de sesión con Google
   useEffect(() => {
     if (response?.type === "success") {
       const { authentication } = response;
@@ -103,7 +103,7 @@ const RegistroScreen = () => {
       console.log("Respuesta del backend:", response);
 
       setStatus("success");
-      setMessage({ text: "✅ Registro exitoso", type: "success" });
+      setMessage({ text: "Registro exitoso", type: "success" });
 
       setName("");
       setEmail("");
@@ -226,7 +226,7 @@ const RegistroScreen = () => {
           )}
         </TouchableOpacity>
 
-        {/* 🚀 Botón Google */}
+        {/* Botón Google */}
         <TouchableOpacity
           style={[styles.googleButton, { backgroundColor: "#fff", borderColor: "#ccc" }]}
           onPress={() => promptAsync()}

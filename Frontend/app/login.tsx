@@ -22,9 +22,9 @@ import { login } from "../services/authService";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri, ResponseType } from "expo-auth-session";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // 🆕 para guardar token
+import AsyncStorage from "@react-native-async-storage/async-storage"; //  para guardar token
 
-// 🖼️ Imágenes
+//  Imágenes
 import logoLight from "./assets/logo.png";
 import logoDark from "./assets/logo2.png";
 import backgroundImageDark from "./assets/imageBackground.png";
@@ -62,7 +62,7 @@ export default function LoginScreen() {
           headers: { Authorization: `Bearer ${access_token}` },
         });
         const userInfo = await userInfoResponse.json();
-        console.log("✅ Usuario:", userInfo);
+        console.log("Usuario:", userInfo);
       } else {
         console.log("❌ Error en el inicio de sesión con Google");
       }
@@ -77,7 +77,7 @@ export default function LoginScreen() {
 
     if (!email || !password) {
       setStatus("idle");
-      return setMessage({ text: "❌ Todos los campos son obligatorios", type: "error" });
+      return setMessage({ text: "Todos los campos son obligatorios", type: "error" });
     }
 
     try {
@@ -88,7 +88,7 @@ export default function LoginScreen() {
       await AsyncStorage.setItem("userData", JSON.stringify(response.user || {}));
 
       setStatus("success");
-      setMessage({ text: "✅ Inicio de sesión exitoso", type: "success" });
+      setMessage({ text: "Inicio de sesión exitoso", type: "success" });
 
       setTimeout(() => {
         router.replace("/(tabs)/home");
@@ -111,7 +111,7 @@ export default function LoginScreen() {
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={{ flex: 1 }}>
-            {/* ☀️🌙 Botón de tema */}
+            {/* Botón de tema */}
             <TouchableOpacity style={styles.themeButton} onPress={toggleTheme}>
               <Feather
                 name={isDarkMode ? "sun" : "moon"}
@@ -204,7 +204,7 @@ export default function LoginScreen() {
                 )}
               </TouchableOpacity>
 
-              {/* 🔵 Botón de Google */}
+              {/* Botón de Google */}
               <TouchableOpacity
                 disabled={!request}
                 onPress={() => promptAsync()}

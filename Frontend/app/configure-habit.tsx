@@ -163,7 +163,7 @@ export default function ConfigureHabitScreen() {
             keyboardType="numeric"
             value={meta}
             onChangeText={setMeta}
-            placeholder="Ej: 8 vasos, 30 minutos..."
+            placeholder="Ej: 8 dias, 2 semanas..."
             placeholderTextColor={colors.subtext}
           />
 

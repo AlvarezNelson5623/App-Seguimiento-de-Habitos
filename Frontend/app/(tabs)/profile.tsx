@@ -10,7 +10,6 @@ import {
   Modal,
   TextInput,
   FlatList,
-  LinearGradient,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { ThemeContext } from "../_layout";
